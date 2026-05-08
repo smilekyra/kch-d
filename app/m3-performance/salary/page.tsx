@@ -3,49 +3,41 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DataTable } from "@/components/ui/data-table"
+import { useSheet } from "@/hooks/use-sheet"
 
-const mockSalaryData = [
-  { 
-    id: "E007", 
-    grade: "EX", 
-    rank: "pm", 
-    baseToken: "S8a1f", 
-    inflation: "15%", 
-    bonus: "S4b2e", 
-    newSalary: "Sc3d4",
-    status: "PASS"
-  },
-  { 
-    id: "E012", 
-    grade: "VG", 
-    rank: "am", 
-    baseToken: "S2x9z", 
-    inflation: "8%", 
-    bonus: "S1y8w", 
-    newSalary: "S7m6n",
-    status: "PASS"
-  },
-  { 
-    id: "E009", 
-    grade: "NI", 
-    rank: "director", 
-    baseToken: "S9k8j", 
-    inflation: "0%", 
-    bonus: "S0a0a", 
-    newSalary: "S9k8j",
-    status: "PASS"
-  },
-];
+type SalaryRow = {
+  id: string
+  grade: string
+  rank: string
+  baseToken: string
+  inflation: string
+  bonus: string
+  newSalary: string
+  status: string
+}
 
 export default function SalaryPage() {
+  const { data, loading, error } = useSheet("master", "salary_calc")
+
+  const rows: SalaryRow[] = data.map((r) => ({
+    id: r.empId ?? "",
+    grade: r.grade ?? "",
+    rank: r.rank ?? "",
+    baseToken: r.baseSalaryToken ?? "",
+    inflation: r.raisePct ? `${r.raisePct}%` : "",
+    bonus: r.bonusPct ? `${r.bonusPct}%` : "",
+    newSalary: r.newSalaryToken ?? "",
+    status: "PASS",
+  }))
+
   const getGradeBadge = (grade: string) => {
-    switch(grade) {
-      case "EX": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700">EX</span>;
-      case "VG": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">VG</span>;
-      case "GD": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">GD</span>;
-      case "NI": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-700">NI</span>;
-      case "UN": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">UN</span>;
-      default: return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">{grade}</span>;
+    switch (grade) {
+      case "EX": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-purple-100 text-purple-700">EX</span>
+      case "VG": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-blue-100 text-blue-700">VG</span>
+      case "GD": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">GD</span>
+      case "NI": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-amber-100 text-amber-700">NI</span>
+      case "UN": return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">UN</span>
+      default: return <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-slate-100 text-slate-700">{grade}</span>
     }
   }
 
@@ -63,14 +55,14 @@ export default function SalaryPage() {
 
   const columns = [
     { key: "id", header: "사원 토큰" },
-    { key: "rank", header: "직급/분기", render: (row: any) => <span className="uppercase text-xs font-bold text-muted-foreground">{row.rank}</span> },
-    { key: "grade", header: "평가 등급", render: (row: any) => getGradeBadge(row.grade) },
+    { key: "rank", header: "직급/분기", render: (row: SalaryRow) => <span className="uppercase text-xs font-bold text-muted-foreground">{row.rank}</span> },
+    { key: "grade", header: "평가 등급", render: (row: SalaryRow) => getGradeBadge(row.grade) },
     { key: "baseToken", header: "기본급 토큰", className: "font-mono text-xs" },
     { key: "inflation", header: "인상률" },
     { key: "bonus", header: "성과급 토큰", className: "font-mono text-xs" },
     { key: "newSalary", header: "최종 연봉 토큰", className: "font-mono text-xs" },
-    { key: "status", header: "3종 검증 게이트", render: (row: any) => getStatusBadge(row.status) },
-  ];
+    { key: "status", header: "3종 검증 게이트", render: (row: SalaryRow) => getStatusBadge(row.status) },
+  ]
 
   return (
     <div className="space-y-6">
@@ -114,7 +106,9 @@ export default function SalaryPage() {
           <CardDescription>평문 금융 데이터 0건 원칙 적용. 모든 금융 데이터는 토큰화되었습니다.</CardDescription>
         </CardHeader>
         <CardContent>
-          <DataTable columns={columns} data={mockSalaryData} />
+          {loading && <p className="text-sm text-muted-foreground">불러오는 중...</p>}
+          {error && <p className="text-sm text-danger">에러: {error}</p>}
+          {!loading && !error && <DataTable columns={columns} data={rows} />}
         </CardContent>
       </Card>
     </div>
